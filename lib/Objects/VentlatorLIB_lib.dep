@@ -1,12 +1,0 @@
-Dependencies for Project 'VentlatorLIB', Target 'lib': (DO NOT MODIFY !)
-F (.\source\insert_data.c)(0x5C402CA1)(--c99 --gnu -c --cpu Cortex-M4.fp --li -g -O0 --apcs=interwork --split_sections-I.\RTE\_lib-IE:\Keil_v5\ARM\PACK\ARM\CMSIS\5.5.1\Device\ARM\ARMCM4\Include-IE:\Keil_v5\ARM\CMSIS\Include-D__UVISION_VERSION="526" -DARMCM4_FP-o .\objects\insert_data.o --omf_browse .\objects\insert_data.crf --depend .\objects\insert_data.d)
-I (source\insert_data.h)(0x5C402C64)
-F (.\source\MovingAverage.c)(0x5C89AC90)(--c99 --gnu -c --cpu Cortex-M4.fp --li -g -O0 --apcs=interwork --split_sections-I.\RTE\_lib-IE:\Keil_v5\ARM\PACK\ARM\CMSIS\5.5.1\Device\ARM\ARMCM4\Include-IE:\Keil_v5\ARM\CMSIS\Include-D__UVISION_VERSION="526" -DARMCM4_FP-o .\objects\movingaverage.o --omf_browse .\objects\movingaverage.crf --depend .\objects\movingaverage.d)
-I (source\MovingAverage.h)(0x5C8B1EB9)
-F (.\source\PID.c)(0x5C3FCD3F)(--c99 --gnu -c --cpu Cortex-M4.fp --li -g -O0 --apcs=interwork --split_sections-I.\RTE\_lib-IE:\Keil_v5\ARM\PACK\ARM\CMSIS\5.5.1\Device\ARM\ARMCM4\Include-IE:\Keil_v5\ARM\CMSIS\Include-D__UVISION_VERSION="526" -DARMCM4_FP-o .\objects\pid.o --omf_browse .\objects\pid.crf --depend .\objects\pid.d)
-I (source\pid.h)(0x5C3FCD3F)
-F (.\source\VentLIB.c)(0x5C40219E)(--c99 --gnu -c --cpu Cortex-M4.fp --li -g -O0 --apcs=interwork --split_sections-I.\RTE\_lib-IE:\Keil_v5\ARM\PACK\ARM\CMSIS\5.5.1\Device\ARM\ARMCM4\Include-IE:\Keil_v5\ARM\CMSIS\Include-D__UVISION_VERSION="526" -DARMCM4_FP-o .\objects\ventlib.o --omf_browse .\objects\ventlib.crf --depend .\objects\ventlib.d)
-F (.\source\leak_flow_count.c)(0x5C403EA5)(--c99 --gnu -c --cpu Cortex-M4.fp --li -g -O0 --apcs=interwork --split_sections-I.\RTE\_lib-IE:\Keil_v5\ARM\PACK\ARM\CMSIS\5.5.1\Device\ARM\ARMCM4\Include-IE:\Keil_v5\ARM\CMSIS\Include-D__UVISION_VERSION="526" -DARMCM4_FP-o .\objects\leak_flow_count.o --omf_browse .\objects\leak_flow_count.crf --depend .\objects\leak_flow_count.d)
-I (source\leak_flow_count.h)(0x5C403564)
-F (.\source\alpha_beta_filter.c)(0x5CAC0514)(--c99 --gnu -c --cpu Cortex-M4.fp --li -g -O0 --apcs=interwork --split_sections-I.\RTE\_lib-IE:\Keil_v5\ARM\PACK\ARM\CMSIS\5.5.1\Device\ARM\ARMCM4\Include-IE:\Keil_v5\ARM\CMSIS\Include-D__UVISION_VERSION="526" -DARMCM4_FP-o .\objects\alpha_beta_filter.o --omf_browse .\objects\alpha_beta_filter.crf --depend .\objects\alpha_beta_filter.d)
-I (source\alpha_beta_filter.h)(0x5CABF5E2)

@@ -1,7 +1,0 @@
---create .\Objects\VentlatorLIB.lib
-.\objects\insert_data.o
-.\objects\movingaverage.o
-.\objects\pid.o
-.\objects\ventlib.o
-.\objects\leak_flow_count.o
-.\objects\alpha_beta_filter.o
