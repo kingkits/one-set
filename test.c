@@ -81,6 +81,8 @@ void simple_calibration_flow_start(void);
 void reset_all_pwm(void);
 #endif
 
+void start_cpap_test(uint32_t val);
+
 extern unsigned char test_flag;
 extern uint32_t test_val;
 
@@ -446,7 +448,11 @@ void test_period(void)
         test_flag = 0;
     }
 
-
+	if(test_flag == 0x81)
+	{
+		start_cpap_test(test_val);
+		test_flag = 0;
+	}
 
 }
 // code end
