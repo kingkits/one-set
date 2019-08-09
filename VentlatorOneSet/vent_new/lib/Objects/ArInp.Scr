@@ -1,0 +1,8 @@
+--create .\Objects\lib_data.lib
+.\objects\blower_data.o
+.\objects\flow1_data.o
+.\objects\oxgen_valve_data.o
+.\objects\oxygen_flow_data.o
+.\objects\peep_valve_data.o
+.\objects\tsi_t_data.o
+.\objects\vacuum_pump_data.o
