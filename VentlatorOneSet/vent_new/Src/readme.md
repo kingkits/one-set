@@ -3,7 +3,7 @@
 ## 1 减小blower在压力偏差大时调整的幅度 
 ## 2 增加peep-valve-control-data 和 blower-speed 的计算函数（由新的校准数据导出） 
 ----
-#2019/8/16: 
+# 2019/8/16: 
 
 ## 1 recoding the method of PEEP-valve control data & speed control data 
 ----
