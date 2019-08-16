@@ -7,7 +7,7 @@
 
 ## 1 recoding the method of PEEP-valve control data & speed control data 
 ----
-'''
+```
 void get_cpap_speed_and_peep_valve_control_data(uint16_t press, int32_t flow)
 { 
   int32_t speed,peep;  
