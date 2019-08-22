@@ -71,7 +71,9 @@ void peep_test_clear_blower_data(void)
     int i, j;
     for(i = 0; i < MAX_PEEP_TEST_PRESS_NUM; i++)
         for(j = 0; j < MAX_PEEP_TEST_FLOW_NUM; j++)
+        {
             peep_test_blower_matrix[i][j] = 0;
+        }
 }
 
 void peep_test_correct_locate(void)
@@ -188,19 +190,19 @@ uint8_t peep_test_adjust_flow(void)
     }
 
 
-//    if(adjust < 0)
-//    {
-//        return 0;
-//    }
+    //    if(adjust < 0)
+    //    {
+    //        return 0;
+    //    }
 
-//    if(adjust > 3500)
-//    {
-//        if(peep_test_data.set_peep_val > 3500) return 0;
-//    }
-	if(adjust < 0 || adjust > 3500)
-	{
-		return 2;
-	}
+    //    if(adjust > 3500)
+    //    {
+    //        if(peep_test_data.set_peep_val > 3500) return 0;
+    //    }
+    if(adjust < 0 || adjust > 3500)
+    {
+        return 2;
+    }
 
     peep_test_data.set_peep_val = adjust;
 
@@ -246,7 +248,7 @@ void peep_test_save_data(void)
 
 void peep_test_start(void)
 {
-	init_peep_test_data();
+    init_peep_test_data();
     peep_test_clear_data();
     peep_test_correct_locate();
     peep_test_data.current_flow_locate  = peep_test_data.start_flow_locate;
@@ -285,11 +287,11 @@ void do_peep_test_actions(void)
     case EM_PEEP_TEST_ADJUST:  // 调整
         switch(peep_test_adjust_flow())
         {
-        	case 1:
-            	break;
-        	default:
-				peep_test_data.work_status = EM_PEEP_TEST_SAVE;
-				break;
+        case 1:
+            break;
+        default:
+            peep_test_data.work_status = EM_PEEP_TEST_SAVE;
+            break;
         }
         break;
     case EM_PEEP_TEST_SAVE:    // 写入数据
@@ -297,7 +299,7 @@ void do_peep_test_actions(void)
         peep_test_data.work_status = EM_PEEP_TEST_SET_NEXT;
         break;
     case EM_PEEP_TEST_STOP:    // 结束
-    	active_buzzer();
+        active_buzzer();
         peep_test_press_pid_stop();
         peep_test_data.work_status = EM_PEEP_TEST_IDLE;
         break;

@@ -1029,6 +1029,7 @@ int32_t get_display_press(void);
  * [上行数据：基本波形数据打包]
  * @method trans_ui_wave_data
  */
+#define TEST_TRIGGER_TO_UI 1
 void trans_ui_wave_data(void)
 {
     uint8_t i;
@@ -1043,6 +1044,40 @@ void trans_ui_wave_data(void)
     {
         buf[i++] = BASE_PFV_MSG;
     }
+#if TEST_TRIGGER_TO_UI
+	if(!is_breath_T_mode_start())
+	{
+		breath_reset_trigger_flag();
+		// press
+		buf[i++] = 0;
+		buf[i++] = 0;
+		// flow
+		buf[i++] = 0;
+		buf[i++] = 0;
+		buf[i++] = 0;
+		// volume
+		buf[i++] = 0;
+		buf[i++] = 0;
+	}
+	else
+	{
+		// press
+	    trans_16bits_data.data = (uint16_t)get_display_press();//display_count_data.Press;
+	    buf[i++] = trans_16bits_data.byte[0]; // 低字节
+	    buf[i++] = trans_16bits_data.byte[1]; // 高字节
+
+	    // flow
+	    trans_32bits_data.data = get_display_flow();//display_count_data.Flow;
+	    buf[i++] = trans_32bits_data.byte[0];// 低字节
+	    buf[i++] = trans_32bits_data.byte[1];
+	    buf[i++] = trans_32bits_data.byte[2];// 高字节
+
+	    // volume
+	    trans_16bits_data.data = (uint16_t)display_count_data.volume;
+	    buf[i++] = trans_16bits_data.byte[0]; // 低字节
+	    buf[i++] = trans_16bits_data.byte[1]; // 高字节
+	}
+#else
     // press
     trans_16bits_data.data = (uint16_t)get_display_press();//display_count_data.Press;
     buf[i++] = trans_16bits_data.byte[0]; // 低字节
@@ -1058,7 +1093,7 @@ void trans_ui_wave_data(void)
     trans_16bits_data.data = (uint16_t)display_count_data.volume;
     buf[i++] = trans_16bits_data.byte[0]; // 低字节
     buf[i++] = trans_16bits_data.byte[1]; // 高字节
-
+#endif
     xor = 0;
 
     for(i = 0; i < 8; i++)

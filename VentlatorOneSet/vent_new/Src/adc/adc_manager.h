@@ -129,7 +129,7 @@ uint32_t get_inhale_flow(void);
 int16_t  get_current_press(void);
 int16_t  get_inhale_press(void);
 int16_t  get_exhale_press(void);
-uint32_t get_exhale_flow(void);
+int32_t  get_exhale_flow(void);
 uint16_t get_inhale_oxygen_concent(void);
 int16_t  get_vacuum_pump_pressure(void);
 

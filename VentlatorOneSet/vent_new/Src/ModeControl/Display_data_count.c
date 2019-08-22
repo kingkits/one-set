@@ -25,6 +25,8 @@ int32_t MA_display_press_buf[MA_DISPLAY_FLOW_BUF_LEN];
 ST_ALPHA_BETA_FILTER_DATA alpha_beta_filter_flow;
 ST_ALPHA_BETA_FILTER_DATA alpha_beta_filter_press;
 
+__weak void peep_valve_adjust_for_flow(void) {}
+#define FLOAT_ONE_PER_THREE 0.333333333333333333333333333333333333333333333333
 /**
  * [is_second_vt_start description]
  * @method is_second_vt_start
@@ -38,18 +40,22 @@ ST_ALPHA_BETA_FILTER_DATA alpha_beta_filter_press;
  */
 void reset_leak_count_data(void)
 {
-	leak_count_data._10s_val      = 0;
-	leak_count_data._10s_count    = 0;
-	leak_count_data._10s_data_ins = 0;
-	leak_count_data._10s_data_exp = 0;
-    leak_count_data._30s_val      = 0;
-	leak_count_data._30s_count    = 0;
-	leak_count_data._30s_data_exp = 0;
-	leak_count_data._30s_data_ins = 0;
-    leak_count_data._3s_val       = 0;
-	leak_count_data._3s_count     = 0;
-	leak_count_data._3s_data_ins  = 0;
-	leak_count_data._3s_data_exp  = 0;
+    leak_count_data._10s_val      = 0.0;
+    leak_count_data._10s_count    = 0;
+    leak_count_data._10s_data_ins = 0.0;
+    leak_count_data._10s_data_exp = 0.0;
+    leak_count_data._30s_val      = 0.0;
+    leak_count_data._30s_count    = 0;
+    leak_count_data._30s_data_exp = 0.0;
+    leak_count_data._30s_data_ins = 0.0;
+    leak_count_data._3s_val       = 0.0;
+    leak_count_data._3s_count     = 0.0;
+    leak_count_data._3s_data_ins  = 0.0;
+    leak_count_data._3s_data_exp  = 0.0;
+
+    leak_count_data.unknown_leakage_30s = 0;
+
+    leak_count_data.average_peep_valve_flow  = 0.0;
 }
 
 /**
@@ -69,19 +75,37 @@ void reset_leak_count_data(void)
 void set_system_breath_leak_level(int32_t leak)
 {
     if(leak < 5000)
-        system_breath_leak_level = BREATH_LEAK_PERFACT; // 泄漏 <5 L/min
+        system_breath_leak_level = EM_BREATH_LEAK_PERFACT; // 泄漏 <5 L/min
     else if(leak < 10000)
-        system_breath_leak_level = BREATH_LEAK_GOOD;    // 泄漏 <10 L/min
+        system_breath_leak_level = EM_BREATH_LEAK_BETTER;  // 泄漏 <10 L/min
     else if(leak < 25000)
-        system_breath_leak_level = BREATH_LEAK_NORMAL;  // 泄漏 <25 L/min
+        system_breath_leak_level = EM_BREATH_LEAK_GOOD;    // 泄漏 <25 L/min
     else if(leak < 60000)
-        system_breath_leak_level = BREATH_LEAK_BAD;     // 泄漏 <60 L/min
+        system_breath_leak_level = EM_BREATH_LEAK_NORMAL;  // 泄漏 <60 L/min
     else if(leak < 80000)
-        system_breath_leak_level = BREATH_LEAK_WORSE;   // 泄漏 <80 L/min
+        system_breath_leak_level = EM_BREATH_LEAK_BAD;     // 泄漏 <80 L/min
     else if(leak < 120000)
-        system_breath_leak_level = BREATH_LEAK_WORST;   // 泄漏 <120 L/min
+        system_breath_leak_level = EM_BREATH_LEAK_WORSE;   // 泄漏 <120 L/min
     else
-        system_breath_leak_level = BREATH_LEAK_PIP_OUT;  // >120 L/min
+        system_breath_leak_level = EM_BREATH_LEAK_WORST;   // 泄漏   >120 L/min
+}
+
+void set_system_breath_press_level(int16_t press)
+{
+	if(press <= 60)
+		system_breath_press_level = EM_BREATH_PRESS_LEVEL_LOWEST; // B1-极低 <6cmH2O
+	else if(press <= 80)
+		system_breath_press_level = EM_BREATH_PRESS_LEVEL_LOWER;  // B2-偏低 <8cmH2O 
+	else if(press <= 100)
+		system_breath_press_level = EM_BREATH_PRESS_LEVEL_LOW;	  // B3-低    <10cmH2O 
+	else if(press <= 150)
+		system_breath_press_level = EM_BREATH_PRESS_LEVEL_NORMAL; // B4-正常	 <15cmH2O 
+	else if(press <= 200)
+		system_breath_press_level = EM_BREATH_PRESS_LEVEL_HIGH;   // B5-偏高 <20cmH2O 
+	else if(press <= 250)
+		system_breath_press_level = EM_BREATH_PRESS_LEVEL_HIGHER; // B6-高    <25cmH2O 
+	else
+		system_breath_press_level = EM_BREATH_PRESS_LEVEL_HIGHEST;// B7-极高 >25cmH2O
 }
 
 /**
@@ -95,26 +119,22 @@ void correct_peep_for_leak(void)
     // Peep阀开度需要提前定义
     switch (system_breath_leak_level)
     {
-    case BREATH_LEAK_PERFACT: // 泄漏 <5 L/min
-        break;
-
-    case BREATH_LEAK_GOOD:    // 泄漏 <10 L/min
-        break;
-
-    case BREATH_LEAK_NORMAL:  // 泄漏 <25 L/min
-        break;
-
-    case BREATH_LEAK_BAD:     // 泄漏 <60 L/min
-        break;
-
-    case BREATH_LEAK_WORSE:   // 泄漏 <80 L/min
-        break;
-
-    case BREATH_LEAK_WORST:    // 泄漏 <100 L/min
-        break;
-
-    case BREATH_LEAK_PIP_OUT:  // >120 L/min
-        break;
+    case EM_BREATH_LEAK_PERFACT: // 泄漏 <5 L/min
+    	break;
+    case EM_BREATH_LEAK_BETTER:  // 泄漏 <10 L/min
+    	break;
+    case EM_BREATH_LEAK_GOOD:    // 泄漏 <25 L/min
+    	break;
+    case EM_BREATH_LEAK_NORMAL:  // 泄漏 <60 L/min
+    	break;
+    case EM_BREATH_LEAK_BAD:     // 泄漏 <80 L/min
+    	break;
+    case EM_BREATH_LEAK_WORSE:   // 泄漏 <120 L/min
+    	break;
+    case EM_BREATH_LEAK_WORST:   // 泄漏   >120 L/min
+    	break;
+    case EM_BREATH_LEAK_PIP_OUT:  //
+    	break;
     default:
         break;
     }
@@ -458,7 +478,7 @@ void reset_display_data(void)
  */
 void enable_volume_count(void)
 {
-	display_temp_data.volume_count_actived = 1;
+    display_temp_data.volume_count_actived = 1;
 }
 
 /**
@@ -467,7 +487,7 @@ void enable_volume_count(void)
  */
 void disable_volume_count(void)
 {
-	display_temp_data.volume_count_actived = 0;
+    display_temp_data.volume_count_actived = 0;
 }
 
 // 这个函数用于清除有关“频率”及“潮气量”计算的相关数据，
@@ -493,7 +513,7 @@ void reset_display_temp_data(void)
     display_set_last_work_status(EM_PATIENT_NOT_WORK);
     breath_reset_display_temp_data();
     breath_clear_second_vt();
-	enable_volume_count();
+    enable_volume_count();
 }
 
 
@@ -534,6 +554,41 @@ void breath_reset_display_temp_data(void)
     display_temp_data.v_e               = 0;
 #endif
 
+    display_temp_data.no_breath_detected_stemp = 0;
+}
+
+void adjust_breath_time_stemp(uint32_t tt)
+{
+	display_temp_data.T_stamp -= tt;
+}
+
+
+/**
+ * [clear_no_breath_detected_stemp description]
+ * @method clear_no_breath_detected_stemp
+ */
+void clear_no_breath_detected_stemp(void)
+{
+    display_temp_data.no_breath_detected_stemp = 0;
+}
+
+/**
+ * [set_no_breath_detected_stemp description]
+ * @method set_no_breath_detected_stemp
+ */
+void set_no_breath_detected_stemp(void)
+{
+    display_temp_data.no_breath_detected_stemp = ms_1_count;
+}
+
+/**
+ * [get_no_breath_detected_time description]
+ * @method get_no_breath_detected_time
+ * @return                             [description]
+ */
+uint32_t get_no_breath_detected_time(void)
+{
+    return (uint32_t) ms_1_count - display_temp_data.no_breath_detected_stemp;
 }
 
 /**
@@ -591,13 +646,13 @@ uint8_t check_pipe_out_status(void)
     }
 
     // 如果泄漏超过100L/min 认为是脱落 //20190808 zzx: 删除这部分功能，在其他地方实现
-//    if(display_count_data.flow_leak > 100000)
-//    {
-//        if(count++ > 3000)
-//            return 1;
-//        else
-//            return 0;
-//    }
+    //    if(display_count_data.flow_leak > 100000)
+    //    {
+    //        if(count++ > 3000)
+    //            return 1;
+    //        else
+    //            return 0;
+    //    }
     // 如果是排痰状态工作，暂不测试管路脱落
     if(get_patient_breath_mode() == EM_VENTLATOR_COUGH_MODE) return 0;
 
@@ -627,13 +682,13 @@ uint8_t check_pipe_out_status(void)
     //               所以可能需要把泄漏值 清0，但清零后，又无法继续检测管路脱落的状态了
     //               或许需要刷新泄漏值才好
     //20190808 zzx: 删除这部分功能，在其他地方实现
-//    if(display_count_data.flow_leak > get_ins_flow() - 500)
-//    {
-//        if(count++ > 3000)
-//            return 1;
-//        else
-//            return 0;
-//    }
+    //    if(display_count_data.flow_leak > get_ins_flow() - 500)
+    //    {
+    //        if(count++ > 3000)
+    //            return 1;
+    //        else
+    //            return 0;
+    //    }
     // 否则 不成立
     count = 0;
     return 0;
@@ -996,7 +1051,7 @@ void display_set_Pmean(void)
  */
 int16_t display_get_Pmean(void)
 {
-	return display_count_data.P_mean;
+    return display_count_data.P_mean;
 }
 
 /**
@@ -1243,7 +1298,9 @@ void display_count_leak(void)
     }
     set_system_breath_leak_level(display_count_data.flow_leak);
 
-#endif	
+#endif
+	set_leak_flow_force();
+	set_system_breath_leak_level(display_count_data.flow_leak);
     reset_display_leak_count_data();
 }
 
@@ -1317,7 +1374,6 @@ void breath_calculate_R_C(void)
         display_count_data.R = 2000;
     if(display_count_data.R < 30)
         display_count_data.R = 30;
-
 
     if(display_count_data.C > 2000)
         display_count_data.C = 2000;
@@ -1478,29 +1534,29 @@ void count_PFV_sum(void)
             dv = 0;
     }
 
-	if(display_temp_data.volume_count_actived)
-	{
-	    // 这个dv还有可能用于其他计算
-	    display_temp_data.last_dv = dv;
-	    display_temp_data.vt_sum += dv;
-		if(display_temp_data.vt_sum<0)
-			display_temp_data.vt_sum=0;
-	}
-	else
-	{
-		// 20190806 容量曲线有莫名的大数据（怀疑是出现了负数）只在呼气过程中末出现,这个改动有待测试
-		display_temp_data.last_dv = 0;
+    if(display_temp_data.volume_count_actived)
+    {
+        // 这个dv还有可能用于其他计算
+        display_temp_data.last_dv = dv;
+        display_temp_data.vt_sum += dv;
+        if(display_temp_data.vt_sum < 0)
+            display_temp_data.vt_sum = 0;
+    }
+    else
+    {
+        // 20190806 容量曲线有莫名的大数据（怀疑是出现了负数）只在呼气过程中末出现,这个改动有待测试
+        display_temp_data.last_dv = 0;
 
-	    display_temp_data.vt_sum = 0;
-	}
+        display_temp_data.vt_sum = 0;
+    }
 
-	// 计算待显示的容量曲线数据
+    // 计算待显示的容量曲线数据
     display_count_data.volume    = display_temp_data.vt_sum / 60000;
 
     // 用于vt累加，貌似加了2遍
     //add_vt_temp(dv);
 
-	// 计算吸呼气潮气量
+    // 计算吸呼气潮气量
     if(display_count_data.Flow > 0)
     {
         // 吸气相
@@ -1730,6 +1786,19 @@ void breath_count_Ti(void)
     display_count_data.Ti                                                = t;
 }
 
+
+
+void breath_completed_Vte_count(void)
+{	
+    if(is_vte_counted())
+        return;
+
+    set_vte_count_flag();	
+	
+    // （呼气）潮气量更新
+    display_append_vt(breath_get_Vte());
+}
+
 // 由之前的时间戳计算呼气时间
 /**
  * [breath_count_Te description]
@@ -1738,10 +1807,6 @@ void breath_count_Ti(void)
 void breath_count_Te(void)
 {
     uint32_t t;
-    if(is_vte_counted())
-        return;
-
-    set_vte_count_flag();
     t = breath_get_time_interval();
     if(t > 30000)
     {
@@ -1801,9 +1866,6 @@ void breath_cycle_completed_actions(void)
     //计算一周期完成的吸呼气数据
     breath_count_Te();
 
-    // reset Vti & Vte count flag
-    clear_vti_count_flag();
-    clear_vte_count_flag();
 
     //潮气量<20ml时，是做错误状态（会有个机械动作，造成吸气的误判）
     if(get_display_temp_vte() < 20) //20ml
@@ -1815,7 +1877,12 @@ void breath_cycle_completed_actions(void)
     display_append_peep(display_count_data.Press);
 
     // （呼气）潮气量更新
-    display_append_vt(breath_get_Vte());
+    //display_append_vt(breath_get_Vte());	
+	breath_completed_Vte_count();
+。。。
+    // reset Vti & Vte count flag
+    clear_vti_count_flag();
+    clear_vte_count_flag();
 
     //峰值压力/平均压力/PEEP
     display_set_Ppeak();
@@ -1896,37 +1963,68 @@ void calculate_defult_leak_flow_old(void)
  */
 void calculate_refresh_defult_leak(void)
 {
-	int32_t leak;
+    int32_t leak;
     if(!display_count_data.default_flow_leak_refresh_flag)
         return;
+
     display_count_data.default_flow_leak_refresh_flag = 0;
 
-	// 取3/10/30内最大泄漏值, 这个有待讨论（20190808）
-	leak = (int32_t)leak_count_data._3s_val;	
-	if(leak < (int32_t)leak_count_data._10s_val)
-		leak = (int32_t)leak_count_data._10s_val;
-	if(leak < (int32_t)leak_count_data._30s_val)
-		leak = (int32_t)leak_count_data._30s_val;
+    // 依据呼气阀流量及预设，进行呼气阀调整
+    peep_valve_adjust_for_flow(); // 张志新20190819
+    // 取3/10/30内最大泄漏值, 这个有待讨论（20190808）
+    leak = (int32_t)leak_count_data._3s_val;
+    if(leak < (int32_t)leak_count_data._10s_val)
+        leak = (int32_t)leak_count_data._10s_val;
+    if(leak < (int32_t)leak_count_data._30s_val)
+        leak = (int32_t)leak_count_data._30s_val;
 
-	if(leak<1000) leak = 0;
-    display_count_data.flow_leak = leak;
-	set_system_breath_leak_level(display_count_data.flow_leak);
+    if(leak < 1000) leak = 0;
+    display_count_data.flow_leak = leak ;
+    set_system_breath_leak_level(display_count_data.flow_leak);
     flow_leak_refresh_data(get_real_press(), display_count_data.flow_leak);
 }
 
+void leak_set_fast_as_default(void)
+{
+    // 快速切换，防止被大的流量切换
+    leak_count_data._10s_val = leak_count_data._3s_val;
+    leak_count_data._30s_val = leak_count_data._3s_val;
+    leak_count_data._10s_count = leak_count_data._3s_count;
+    leak_count_data._30s_count = leak_count_data._3s_count;
+    leak_count_data._10s_data_exp = leak_count_data._3s_data_exp;
+    leak_count_data._30s_data_exp = leak_count_data._3s_data_exp;
+    leak_count_data._10s_data_ins = leak_count_data._3s_data_ins;
+    leak_count_data._30s_data_ins = leak_count_data._3s_data_ins;
+    leak_count_data.active_flag = 0;
+}
+/**
+ * [set_leak_flow_fast description]
+ * @method set_leak_flow_fast
+ */
+void set_leak_flow_fast(void)
+{
+    int32_t leak;
+
+    if(leak_count_data.active_flag == 0) return;
+    // 取3/10/30内最大泄漏值, 这个有待讨论（20190808）
+    leak = (int32_t)leak_count_data._3s_val;
+
+    if(leak < 1000) leak = 0;
+
+    display_count_data.flow_leak = leak;
+    display_count_data.default_flow_leak = leak;
+    leak_set_fast_as_default();
+    flow_leak_refresh_data(get_real_press(), display_count_data.flow_leak);
+}
+
+/**
+ * [set_leak_flow_force description]
+ * @method set_leak_flow_force
+ */
 void set_leak_flow_force(void)
 {
-	int32_t leak;
-
-	// 取3/10/30内最大泄漏值, 这个有待讨论（20190808）
-	leak = (int32_t)leak_count_data._3s_val;	
-	if(leak < (int32_t)leak_count_data._10s_val)
-		leak = (int32_t)leak_count_data._10s_val;
-	if(leak < (int32_t)leak_count_data._30s_val)
-		leak = (int32_t)leak_count_data._30s_val;
-
-	if(leak<1000) leak = 0;
-    display_count_data.flow_leak = leak;	
+    if(leak_count_data.active_flag < 2) return;
+    display_count_data.flow_leak = display_count_data.default_flow_leak;
     flow_leak_refresh_data(get_real_press(), display_count_data.flow_leak);
 }
 
@@ -1940,96 +2038,105 @@ void calculate_defult_leak_flow_new(void)
     float flow_e;
     int32_t leak;
 
-	// get inhale/exhale flow
+    // get inhale/exhale flow
     flow_i = (float)get_ins_flow();
     flow_e = (float)get_ex_flow();
 
-	// 3s count
-	if(leak_count_data._3s_count ++ < 3000)
-	{
-		leak_count_data._3s_data_ins += flow_i;
-		leak_count_data._3s_data_exp += flow_e;
-	}
-	else
-	{
-		// calculate
-	    leak_count_data._3s_val = (leak_count_data._3s_data_ins - leak_count_data._3s_data_exp) / (float)leak_count_data._3s_count;
+    // 3s count
+    if(leak_count_data._3s_count ++ < 3000)
+    {
+        leak_count_data._3s_data_ins += flow_i;
+        leak_count_data._3s_data_exp += flow_e;
+    }
+    else
+    {
+        // calculate
+        leak_count_data._3s_val = (leak_count_data._3s_data_ins - leak_count_data._3s_data_exp) / (float)leak_count_data._3s_count;
 
-		leak = (int32_t) leak_count_data._3s_val;
-		if(leak < 1000)
-		{
-			leak = 0; // 这里认为泄漏为0			
-			leak_count_data._3s_val = 0.0;
-		}		
-		if(leak_count_data.active_flag == 0)
-		{
-			display_count_data.default_flow_leak = leak;
-		    leak_count_data.active_flag = 1;			
-		}
-		leak_count_data._3s_count = 0;
-		leak_count_data._3s_data_ins = 0;
-		leak_count_data._3s_data_exp = 0; 
-				
-		display_count_data.default_flow_leak_refresh_flag = 1;		
-	}
+        leak = (int32_t) leak_count_data._3s_val;
+        if(leak < 1000)
+        {
+            leak = 0; // 这里认为泄漏为0
+            leak_count_data._3s_val = 0.0;
+        }
+        if(leak_count_data.active_flag == 0)
+        {
+            display_count_data.default_flow_leak = leak;
+            leak_count_data.active_flag = 1;
+        }
+        leak_count_data.average_peep_valve_flow = leak_count_data._3s_data_exp / (float)leak_count_data._3s_count;
+        leak_count_data._3s_count = 0;
+        leak_count_data._3s_data_ins = 0;
+        leak_count_data._3s_data_exp = 0;
 
-	// 10s count
-	if(leak_count_data._10s_count ++ < 10000)
-	{
-		leak_count_data._10s_data_ins += flow_i;
-		leak_count_data._10s_data_exp += flow_e;
-	}
-	else
-	{
-		// calculate
-	    leak_count_data._10s_val = (leak_count_data._10s_data_ins - leak_count_data._10s_data_exp) / (float)leak_count_data._10s_count;
-		leak = (int32_t) leak_count_data._10s_val;
-		if(leak < 1000)
-		{
-			leak = 0; // 这里认为泄漏为0			
-			leak_count_data._10s_val = 0.0;
-		}
+        display_count_data.default_flow_leak_refresh_flag = 1;
+    }
 
-	    // calculate
-	    if(leak_count_data.active_flag == 1)
-	    {
-			display_count_data.default_flow_leak = leak;
-		    leak_count_data.active_flag = 2;			
-	    }
-		leak_count_data._10s_count = 0;
-		leak_count_data._10s_data_ins = 0;
-		leak_count_data._10s_data_exp = 0;
-	}
+    // 10s count
+    if(leak_count_data._10s_count ++ < 10000)
+    {
+        leak_count_data._10s_data_ins += flow_i;
+        leak_count_data._10s_data_exp += flow_e;
+    }
+    else
+    {
+        // calculate
+        leak_count_data._10s_val = (leak_count_data._10s_data_ins - leak_count_data._10s_data_exp) / (float)leak_count_data._10s_count;
+        leak = (int32_t) leak_count_data._10s_val;
+        if(leak < 1000)
+        {
+            leak = 0; // 这里认为泄漏为0
+            leak_count_data._10s_val = 0.0;
+        }
 
-	// 30s count
-	if(leak_count_data._30s_count ++ < 30000)
-	{
-		leak_count_data._30s_data_ins += flow_i;
-		leak_count_data._30s_data_exp += flow_e;
-	}
-	else
-	{
-		// calculate
-	    leak_count_data._30s_val = (leak_count_data._30s_data_ins - leak_count_data._30s_data_exp) / (float)leak_count_data._30s_count;
+        // calculate
+        if(leak_count_data.active_flag == 1)
+        {
+            display_count_data.default_flow_leak = leak;
+            leak_count_data.active_flag = 2;
+        }
+        leak_count_data.average_peep_valve_flow = leak_count_data._10s_data_exp / (float)leak_count_data._10s_count;
+        leak_count_data._10s_count = 0;
+        leak_count_data._10s_data_ins = 0;
+        leak_count_data._10s_data_exp = 0;
+    }
 
-	    leak = (int32_t) leak_count_data._30s_val;
-		if(leak < 1000)
-		{
-			leak = 0; // 这里认为泄漏为0
-			leak_count_data._30s_val = 0.0;
-		}
+    // 30s count
+    if(leak_count_data._30s_count ++ < 30000)
+    {
+        leak_count_data._30s_data_ins += flow_i;
+        leak_count_data._30s_data_exp += flow_e;
+    }
+    else
+    {
+        // calculate
+        leak_count_data._30s_val = (leak_count_data._30s_data_ins - leak_count_data._30s_data_exp) / (float)leak_count_data._30s_count;
 
-		display_count_data.default_flow_leak = leak;
-	    leak_count_data.active_flag = 3;
-		
-		leak_count_data._30s_count = 0;
-		leak_count_data._30s_data_ins = 0;
-		leak_count_data._30s_data_exp = 0;
+        leak = (int32_t) leak_count_data._30s_val;
+        if(leak < 1000)
+        {
+            leak_count_data.unknown_leakage_30s = leak;
+            leak = 0; // 这里认为泄漏为0
+            leak_count_data._30s_val = 0.0;
+        }
+        else leak_count_data.unknown_leakage_30s = 0;
 
-	}
+        display_count_data.default_flow_leak = leak;
 
-	// 这里需要进行必要的判断，以确认系统的泄漏状态，并判断是否有脱落
+        leak_count_data.average_peep_valve_flow = leak_count_data._30s_data_exp / (float)leak_count_data._30s_count;
+
+        leak_count_data.active_flag = 3;
+
+
+        leak_count_data._30s_count = 0;
+        leak_count_data._30s_data_ins = 0;
+        leak_count_data._30s_data_exp = 0;
+
+    }
+
+    // 这里需要进行必要的判断，以确认系统的泄漏状态，并判断是否有脱落
 }
+
 /**
  * [calculate_defult_leak_flow1 description]
  * @method calculate_defult_leak_flow1
@@ -2078,7 +2185,7 @@ void calculate_breath_data_for_CPAP(void)
     case EM_PATIENT_NOT_WORK:   // 未工作
         // only for leak flow
         //calculate_defult_leak_flow();
-        calculate_refresh_defult_leak();
+        //calculate_refresh_defult_leak();
         breath_count_freq_mv_static(EM_FREQ_MV_OPERATION_RESET);
         // 清除本周期的临时变量用于新的周期计数
         breath_reset_display_temp_data();
@@ -2088,14 +2195,14 @@ void calculate_breath_data_for_CPAP(void)
     case EM_PATIENT_PIPE_OUT:   // 管路脱落
         // 需要刷新泄漏流量值，用于判定管路脱落后，是否有被还原的状态
         //calculate_defult_leak_flow();
-        calculate_refresh_defult_leak();
+        //calculate_refresh_defult_leak();
         breath_count_freq_mv_static(EM_FREQ_MV_OPERATION_RESET);
         break;
 
     case EM_PATIENT_BREATH_DETECT: // 呼吸检测
         // 泄漏检测流程 （每统计3秒做一次计算）
         //calculate_defult_leak_flow();
-        calculate_refresh_defult_leak();
+        //calculate_refresh_defult_leak();
         break;
 
     case EM_PATIENT_INHALE_DETECT: // 吸气检测
@@ -2191,7 +2298,6 @@ void calculate_breath_data_for_CPAP(void)
     default:
         break;
     }
-
 }
 
 /**
@@ -2208,7 +2314,7 @@ void calculate_breath_data_for_ST(void)
         reset_display_data();
         // only for leak flow
         //calculate_defult_leak_flow();
-        calculate_refresh_defult_leak();
+        //calculate_refresh_defult_leak();
         // do nothing
         // 清除本周期的临时变量用于新的周期计数
         breath_reset_display_temp_data();
@@ -2218,7 +2324,7 @@ void calculate_breath_data_for_ST(void)
     case EM_PATIENT_BREATH_DETECT:          // 呼吸检测
         // 泄漏检测流程 （每统计3秒做一次计算）
         //calculate_defult_leak_flow();
-        calculate_refresh_defult_leak();
+        //calculate_refresh_defult_leak();
         break;
 
     case EM_PATIENT_INHALE_DETECT:         // 吸气检测
@@ -2354,7 +2460,7 @@ void calculate_breath_data_for_PCV(void)
         reset_display_data();
         // only for leak flow
         //calculate_defult_leak_flow();
-        calculate_refresh_defult_leak();
+        //calculate_refresh_defult_leak();
         // do nothing
         // 清除本周期的临时变量用于新的周期计数
         breath_reset_display_temp_data();
@@ -2366,7 +2472,7 @@ void calculate_breath_data_for_PCV(void)
         reset_display_data();
         // only for leak flow
         //calculate_defult_leak_flow();
-        calculate_refresh_defult_leak();
+        //calculate_refresh_defult_leak();
         // do nothing
         // 清除本周期的临时变量用于新的周期计数
         breath_reset_display_temp_data();
@@ -2573,7 +2679,7 @@ static void refresh_flow_press(void)
                 get_inhale_press(),
                 get_exhale_press(),
                 get_inhale_flow() + DEFAULT_NEBULIZER_FLOW,
-                0);
+                get_exhale_flow() + leak_count_data.unknown_leakage_30s);
         }
         else
         {
@@ -2581,7 +2687,7 @@ static void refresh_flow_press(void)
                 get_inhale_press(),
                 get_exhale_press(),
                 get_inhale_flow(),
-                0);
+                get_exhale_flow() + leak_count_data.unknown_leakage_30s);
         }
     }
     else
@@ -2593,7 +2699,7 @@ static void refresh_flow_press(void)
                 get_inhale_press(),
                 get_exhale_press(),
                 get_inhale_flow() + DEFAULT_NEBULIZER_FLOW,
-                get_exhale_flow());
+                get_exhale_flow() + leak_count_data.unknown_leakage_30s);
         }
         else
         {
@@ -2601,7 +2707,7 @@ static void refresh_flow_press(void)
                 get_inhale_press(),
                 get_exhale_press(),
                 get_inhale_flow(),
-                get_exhale_flow());
+                get_exhale_flow() + leak_count_data.unknown_leakage_30s);
         }
     }
     display_refresh_compensation_press_flow();
@@ -2620,6 +2726,7 @@ static void refresh_flow_press(void)
     MA_APPEND_DISPLAY_PRESS(display_count_data.Press);
 }
 
+
 /* **********************************************
 * 呼吸数据 总的计算入口
 * **********************************************/
@@ -2631,8 +2738,11 @@ static void refresh_flow_press(void)
 void calculate_breath_data(void)
 {
     refresh_flow_press();
-    //calculate_defult_leak_flow();
+
+    // 累加泄漏和呼气阀流量
     calculate_defult_leak_flow_new();
+
+    calculate_refresh_defult_leak();
     switch(get_patient_breath_mode())
     {
     case EM_VENTLATOR_STANDBY_MODE:

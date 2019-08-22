@@ -74,14 +74,24 @@ void format_eeprom_data(void);
 void reset_simple_calibration_flow_data(void);
 void do_simple_calibration_flow_work(void);
 void simple_calibration_flow_start(void);
+__weak void reset_simple_calibration_flow_data(void) {}
+__weak void do_simple_calibration_flow_work(void) {}
+__weak void simple_calibration_flow_start(void) {}
+
 #endif
 
 
 #if TEST_PWM
 void reset_all_pwm(void);
+__weak void reset_all_pwm(void) {}
 #endif
 
 void start_cpap_test(uint32_t val);
+uint16_t test_cpap_get_speed_and_peep_control(void);
+__weak uint16_t test_cpap_get_speed_and_peep_control(void)
+{
+    return 0;
+}
 
 extern unsigned char test_flag;
 extern uint32_t test_val;
@@ -448,11 +458,19 @@ void test_period(void)
         test_flag = 0;
     }
 
-	if(test_flag == 0x81)
-	{
-		start_cpap_test(test_val);
-		test_flag = 0;
-	}
+    if(test_flag == 0x81)
+    {
+        start_cpap_test(test_val);
+        test_flag = 0;
+    }
+
+    if(test_flag == 0x82)
+    {
+        test_val = test_cpap_get_speed_and_peep_control();
+
+        test_flag = 0;
+    }
+
 
 }
 // code end

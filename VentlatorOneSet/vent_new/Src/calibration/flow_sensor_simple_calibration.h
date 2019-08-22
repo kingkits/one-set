@@ -27,7 +27,7 @@ typedef struct __SIMPLE_CLIBRATION_FLOW_WORK_DATA
     uint32_t flow_sum;
     uint32_t real_sum;
     uint32_t tsiV_sum;
-	uint32_t tsiT_sum;
+    uint32_t tsiT_sum;
 
     uint32_t sensor_low_sum;
     uint32_t sensor_high_sum;

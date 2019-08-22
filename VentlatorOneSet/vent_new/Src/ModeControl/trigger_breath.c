@@ -85,9 +85,9 @@ void reset_trigger_gate(void)
 
 void trigger_force_confirm_type(uint8_t type)
 {
-	//if(type >= EM_TRIGGER_TYPE_DEFINES_ENDS) return;
-	//if(st_trigger_data.type!=type)
-		st_trigger_data.type=type;
+    //if(type >= EM_TRIGGER_TYPE_DEFINES_ENDS) return;
+    //if(st_trigger_data.type!=type)
+    st_trigger_data.type = type;
 }
 /**
  * [set_trigger_gate_fmaxp description]
@@ -409,29 +409,29 @@ void trigger_simple_detect_inhale(int32_t flow1, int16_t press)
 
     // 压力连续超过门限
     //A 连续8个压力数据超过门限，视为吸气触发
-    if(display_get_Pmean() > main_control_data.epap-15)
+    if(display_get_Pmean() > main_control_data.epap - 15)
     {
-	    if(press > st_trigger_data.press_gate_min_n)
-	    {
-	        // 未满足要求时，清除积累
-	        st_trigger_data.press_status_inhale = 0;
-	    }
-	    else if(press < st_trigger_data.press_gate_max_n)
-	    {
-	        // 超出设定范围时，使用最大值 （限制幅度）  确保为正值
-	        st_trigger_data.press_status_inhale += st_trigger_data.press_gate_scale_n;
-	    }
-	    else
-	    {
-	        // 要确保数据为正值
-	        st_trigger_data.press_status_inhale += st_trigger_data.press_gate_min_n - press;
-	    }
+        if(press > st_trigger_data.press_gate_min_n)
+        {
+            // 未满足要求时，清除积累
+            st_trigger_data.press_status_inhale = 0;
+        }
+        else if(press < st_trigger_data.press_gate_max_n)
+        {
+            // 超出设定范围时，使用最大值 （限制幅度）  确保为正值
+            st_trigger_data.press_status_inhale += st_trigger_data.press_gate_scale_n;
+        }
+        else
+        {
+            // 要确保数据为正值
+            st_trigger_data.press_status_inhale += st_trigger_data.press_gate_min_n - press;
+        }
     }
-	else
-	{
-		// 当气道压力降到超出触发阈值时，会产生误触发（此时应该调整转速以恢复压力）
-    	st_trigger_data.press_status_inhale = 0; //张志新：20190806 仅仅用于测试
-	}
+    else
+    {
+        // 当气道压力降到超出触发阈值时，会产生误触发（此时应该调整转速以恢复压力）
+        st_trigger_data.press_status_inhale = 0; //张志新：20190806 仅仅用于测试
+    }
     // 重要：在这里应该是 2个正值(或0)相加
     st_trigger_data.inhale_status = st_trigger_data.flow_status_inhale + st_trigger_data.press_status_inhale;
     st_trigger_data.inhale_status >>= 3;
@@ -509,7 +509,7 @@ void trigger_simple_detect_exhale(int32_t flow1, int16_t press)
  */
 void start_trigger(uint8_t type)
 {
-    reset_trigger_detected_data(courent_counted_flow, courent_counted_press);
+    reset_trigger_detected_data(current_counted_flow, current_counted_press);
     st_trigger_data.type = type;
 
     // 在启动触发时同步进行的准备工作
@@ -716,32 +716,32 @@ void trigger_set_current_status(void)
         break;
 
     case EM_TRIGGER_TYPE_E_EXP: // 水平压力，检测主动呼气
-        trigger_simple_detect_exhale(courent_counted_flow, courent_counted_press);
+        trigger_simple_detect_exhale(current_counted_flow, current_counted_press);
         break;
 
     case EM_TRIGGER_TYPE_E_INS: // 水平压力，检测主动吸气
         //trigger_detect_inhale();
-        trigger_simple_detect_inhale(courent_counted_flow, courent_counted_press);
+        trigger_simple_detect_inhale(current_counted_flow, current_counted_press);
         break;
 
     case EM_TRIGGER_TYPE_E_EXP_INS:
-        trigger_simple_detect_inhale(courent_counted_flow, courent_counted_press);
-        trigger_simple_detect_exhale(courent_counted_flow, courent_counted_press);
+        trigger_simple_detect_inhale(current_counted_flow, current_counted_press);
+        trigger_simple_detect_exhale(current_counted_flow, current_counted_press);
         break;
 
     case EM_TRIGGER_TYPE_CPAP_INS_FINISHED: // = 4, // CPAP 检测吸气结束
-        trigger_set_cpap_flow_for_inhale_finished(courent_counted_flow);
+        trigger_set_cpap_flow_for_inhale_finished(current_counted_flow);
         break;
 
     case EM_TRIGGER_TYPE_CPAP_EXP_FINISHED: // = 5, // CPAP 检测呼气结束
-        trigger_set_cpap_flow_for_exhale_finished(courent_counted_flow);
+        trigger_set_cpap_flow_for_exhale_finished(current_counted_flow);
         break;
 
     case EM_TRIGGER_TYPE_STV_INS_FINISHED:  // = 6, // ST 检测吸气结束
-        trigger_set_stv_flow_for_inhale_finished(courent_counted_flow);
+        trigger_set_stv_flow_for_inhale_finished(current_counted_flow);
         break;
     case EM_TRIGGER_TYPE_STV_EXP_FINISHED:  // = 7, // ST 检测呼气结束
-        trigger_set_stv_flow_for_exhale_finished(courent_counted_flow);
+        trigger_set_stv_flow_for_exhale_finished(current_counted_flow);
         break;
     }
 }

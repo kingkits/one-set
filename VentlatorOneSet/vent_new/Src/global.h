@@ -101,10 +101,14 @@ typedef enum __ENUM_SYS_WORK_STATUS
 #define MIN_BLOWER_SPEED 5000
 #define MAX_BLOWER_SPEED 40000
 
-// for new ventilator
-#define courent_counted_flow display_count_data.Flow
-#define courent_counted_press display_count_data.Press
+#define MIN_PEEP_CONTROL_VAL 1000
+#define MAX_PEEP_CONTROL_VAL 3500
 
+// for new ventilator
+#define current_counted_flow display_count_data.Flow
+#define current_counted_press display_count_data.Press
+#define DEFAULT_SYSTEM_PEEP_VALVE_FLOW 20000
+#define system_set_peep_valve_flow DEFAULT_SYSTEM_PEEP_VALVE_FLOW
 //#define get_1ms_count() ms_1_count
 // Timer & counter
 extern volatile uint32_t second_count;
@@ -201,6 +205,9 @@ typedef union __UN_TRANS_U16_2_BYTE
     uint16_t data;
     uint8_t  byte[2];
 } UN_TRANS_U16_2_BYTE;
+
+#define BREATH_STOP_PID_ADJUST()        set_PID_blower_adjust_mode(ENUM_PID_NO_ADJUST)
+#define BREATH_ENABLE_PID_FAST_ADJUST() set_PID_blower_adjust_mode(ENUM_PID_FAST_FOR_PRESS)
 
 // fubction in global.c
 void     init_global_data(void);

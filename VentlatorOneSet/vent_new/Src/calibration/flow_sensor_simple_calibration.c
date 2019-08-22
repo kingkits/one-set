@@ -33,8 +33,8 @@ void reset_simple_calibration_flow_sum_data(void)
 {
     simple_calibration_flow_work_data.flow_sum = 0;
     simple_calibration_flow_work_data.real_sum = 0;
-	simple_calibration_flow_work_data.tsiV_sum = 0;
-	simple_calibration_flow_work_data.tsiT_sum = 0;
+    simple_calibration_flow_work_data.tsiV_sum = 0;
+    simple_calibration_flow_work_data.tsiT_sum = 0;
     simple_calibration_flow_work_data.sensor_high_sum = 0;
     simple_calibration_flow_work_data.sensor_low_sum = 0;
     simple_calibration_flow_work_data.sum_count = 0;
@@ -52,8 +52,8 @@ uint8_t append_simple_calibration_flow_sum_data(void)
     simple_calibration_flow_work_data.real_sum += get_exhale_flow();
     simple_calibration_flow_work_data.sensor_high_sum += adc_voltage.adc_flow_exhale_high;
     simple_calibration_flow_work_data.sensor_low_sum  += adc_voltage.adc_flow_exhale_low;
-	simple_calibration_flow_work_data.tsiV_sum = adc_voltage.adc_tsi_V;
-	simple_calibration_flow_work_data.tsiT_sum = adc_voltage.adc_tsi_T;
+    simple_calibration_flow_work_data.tsiV_sum = adc_voltage.adc_tsi_V;
+    simple_calibration_flow_work_data.tsiT_sum = adc_voltage.adc_tsi_T;
     simple_calibration_flow_work_data.sum_count ++;
 
     if(simple_calibration_flow_work_data.sum_count >= SIMPLE_CALIBRATION_FLOW_SUM_NUM)
@@ -93,8 +93,8 @@ void reset_simple_calibration_flow_data(void)
         Calibration_flow_data[i] = 0;
         Calibration_flow_data_real[i] = 0;
 
-		Calibration_flow_tsi_V_data[i] = 0;
-		Calibration_flow_tsi_T_data[i] = 0;
+        Calibration_flow_tsi_V_data[i] = 0;
+        Calibration_flow_tsi_T_data[i] = 0;
     }
 
     reset_simple_calibration_flow_sum_data();

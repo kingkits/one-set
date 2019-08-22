@@ -41,7 +41,7 @@ void oxygen_start(void);
  * @method is_S_mode_inhale_press_over
  * @return [description]
  */
-#define is_S_mode_inhale_press_over() (courent_counted_press > stv_control_dat.target_press + 10)
+#define is_S_mode_inhale_press_over() (current_counted_press > stv_control_dat.target_press + 10)
 
 /**
  * [is_stv_protect_time_active description]
@@ -507,7 +507,8 @@ uint8_t is_stv_detect_exhale_finished(void)
         stop_trigger();
 
         // 呼气结束了，计算呼气潮气量，忽略之后的潮气量计算（主动放弃不必要的数据计算）
-        breath_count_Te();
+        //breath_count_Te();        
+        breath_completed_Vte_count();
 
         // 暂时在这里调整PEEP阀
         correct_peep_for_leak();
@@ -564,7 +565,7 @@ void breath_stv_mode(void)
         }
 
         // for blower speed adjust
-        refresh_stv_exhale_press_low(courent_counted_press, courent_counted_flow);
+        refresh_stv_exhale_press_low(current_counted_press, current_counted_flow);
 
         // 如果超时，将进入PCV- T_INHALE_START
         // 如果PCV吸气时间到，进入吸气相
@@ -612,7 +613,7 @@ void breath_stv_mode(void)
         if(is_stv_detect_inhale_finished()) break;
 
         // for peep valve adjust
-        refresh_stv_inhale_press_high(courent_counted_press, courent_counted_flow);
+        refresh_stv_inhale_press_high(current_counted_press, current_counted_flow);
 
         // 超时的话，需要处理
         if(is_stv_inhale_overtiming())

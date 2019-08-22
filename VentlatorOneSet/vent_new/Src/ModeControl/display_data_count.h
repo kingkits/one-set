@@ -15,17 +15,40 @@ typedef enum
     EM_TRIGGER_EXHALE_IN_BREATH       = 2
 } EM_PATIENT_ACTIVE_BREATH_TYPES;
 
+/* ****************************************************************
+	功能	1      2     3         4	   5       6        7
+A	泄漏状态
+    A1-极好 A2-较好 A3-好         A4-正常    A5-偏差 A6-差	   A7-极差
+	<5L/min <10Lmin <25L/min <60Lmin <80Lmin <120Lmin >120Lmin
+B	工作压力
+	B1-极低    B2-偏低    B3-低    B4-正常    B5-偏高	B6-高	B7-极高
+	<6cmH2O <8cmH2O <10cmH2O <15cmH2O <20cmH2O <25cmH2O >25cmH2O
+ * ****************************************************************	
+*/
+typedef enum
+{
+    EM_BREATH_LEAK_PERFACT, // 泄漏 <5 L/min
+    EM_BREATH_LEAK_BETTER,  // 泄漏 <10 L/min    
+    EM_BREATH_LEAK_GOOD,    // 泄漏 <25 L/min
+    EM_BREATH_LEAK_NORMAL,  // 泄漏 <60 L/min
+    EM_BREATH_LEAK_BAD,     // 泄漏 <80 L/min
+    EM_BREATH_LEAK_WORSE,   // 泄漏 <120 L/min
+    EM_BREATH_LEAK_WORST,   // 泄漏   >120 L/min
+    EM_BREATH_LEAK_PIP_OUT  // 
+} ENUM_BREATH_LEAK_LEVEL_TYPES;
+extern uint8_t system_breath_press_level;
 
 typedef enum
 {
-    BREATH_LEAK_PERFACT, // 泄漏 <5 L/min
-    BREATH_LEAK_GOOD,    // 泄漏 <10 L/min
-    BREATH_LEAK_NORMAL,  // 泄漏 <25 L/min
-    BREATH_LEAK_BAD,     // 泄漏 <60 L/min
-    BREATH_LEAK_WORSE,   // 泄漏 <80 L/min
-    BREATH_LEAK_WORST,   // 泄漏   >80 L/min
-    BREATH_LEAK_PIP_OUT  // >120 L/min
-} ENUM_BREATH_LEAK_LEVEL_TYPES;
+	EM_BREATH_PRESS_LEVEL_LOWEST, // B1-极低 <6cmH2O
+	EM_BREATH_PRESS_LEVEL_LOWER,  // B2-偏低 <8cmH2O 
+	EM_BREATH_PRESS_LEVEL_LOW,	  // B3-低    <10cmH2O 
+	EM_BREATH_PRESS_LEVEL_NORMAL, // B4-正常	 <15cmH2O 
+	EM_BREATH_PRESS_LEVEL_HIGH,   // B5-偏高 <20cmH2O 
+	EM_BREATH_PRESS_LEVEL_HIGHER, // B6-高    <25cmH2O 
+	EM_BREATH_PRESS_LEVEL_HIGHEST // B7-极高 >25cmH2O
+} EM_PRESS_LEVEL_STATUS_TYPES;
+
 // 上一呼吸周期的泄漏水平
 // 泄漏水平会影响PEEP控制，排痰，叩击，通气参数补偿和触发控制方案
 // 需要在后期进行完善
@@ -41,23 +64,27 @@ typedef enum
 
 typedef struct __ST_LEAK_COUNT_DATA
 {
-	float _3s_val;             // 每   3秒周期的平均泄漏值 
-    float _3s_data_ins;        // 累计数
-    float _3s_data_exp;        // 累计数
-    uint32_t _3s_count;        // 每   3秒周期的计数
+    float _3s_val;             		// 每   3秒周期的平均泄漏值
+    float _3s_data_ins;        		// 累计数
+    float _3s_data_exp;        		// 累计数
+    uint32_t _3s_count;        		// 每   3秒周期的计数
 
-    float _10s_val;            // 每  10秒周期的平均泄漏值    
-    float _10s_data_ins;       // 累加数
-    float _10s_data_exp;       // 累加数
-    uint32_t _10s_count;       // 每  10秒周期的计数
+    float _10s_val;            		// 每  10秒周期的平均泄漏值
+    float _10s_data_ins;       		// 累加数
+    float _10s_data_exp;       		// 累加数
+    uint32_t _10s_count;       		// 每  10秒周期的计数
 
-	float _30s_val;        	   // 每  30秒周期的平均泄漏值
-    float _30s_data_ins;       // 累加数
-    float _30s_data_exp;       // 累加数
-    uint32_t _30s_count;       // 每  30秒周期的计数
+    float _30s_val;        	   		// 每  30秒周期的平均泄漏值
+    float _30s_data_ins;       		// 累加数
+    float _30s_data_exp;       		// 累加数
+    uint32_t _30s_count;       		// 每  30秒周期的计数
 
-	uint8_t active_flag;
-}ST_LEAK_COUNT_DATA;
+    float average_peep_valve_flow;	// 计算的平均呼气阀流量
+
+    int32_t unknown_leakage_30s;
+
+    uint8_t active_flag;
+} ST_LEAK_COUNT_DATA;
 extern ST_LEAK_COUNT_DATA leak_count_data;
 
 typedef struct __ST_DISPLAY_DATA
@@ -209,12 +236,13 @@ typedef struct __ST_DISPLAY_TEMP_DATA
     uint32_t v_e;
 #endif
 
-	uint8_t volume_count_actived; // 如果标记为1则计算容量曲线，否则，容量曲线数据归零
+    uint32_t no_breath_detected_stemp;
+    uint8_t volume_count_actived; // 如果标记为1则计算容量曲线，否则，容量曲线数据归零
 } ST_DISPLAY_TEMP_DATA_DEFINES;
 extern ST_DISPLAY_TEMP_DATA_DEFINES display_temp_data;
 
-#define is_T_mode_inhale_press_over() (courent_counted_press > main_control_data.ipap + 10)
-
+#define is_T_mode_inhale_press_over() (current_counted_press > main_control_data.ipap + 10)
+#define is_T_mode_inhale_press_insufficient() (current_counted_press < main_control_data.ipap - 20)
 
 /* ******************************************
 	系统复位时的初始化
@@ -327,7 +355,17 @@ void     set_system_breath_leak_level(int32_t leak);
 void     display_count_leak(void);
 void     correct_peep_for_leak(void);
 void     reset_leak_count_data(void);
-void set_leak_flow_force(void);
+void     set_leak_flow_force(void);
+void     set_leak_flow_fast(void);
+
+void     clear_no_breath_detected_stemp(void);
+void     set_no_breath_detected_stemp(void);
+uint32_t get_no_breath_detected_time(void);
+
+void set_system_breath_press_level(int16_t press);
+
+void adjust_breath_time_stemp(uint32_t tt);
+void breath_completed_Vte_count(void);
 
 #endif //__DISPLY_DATA_COUNT_H
 // ========= The end

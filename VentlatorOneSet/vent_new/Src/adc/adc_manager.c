@@ -353,7 +353,7 @@ __weak uint32_t get_inhale_flow(void)
  * @method get_exhale_flow
  * @return                 [description]
  */
-__weak uint32_t get_exhale_flow(void)
+__weak int32_t get_exhale_flow(void)
 {
 #if USE_MA_TRANSLATOR
     return fast_get_moving_average_data_u32(&MA_flow_exhale);

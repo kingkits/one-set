@@ -23,6 +23,7 @@ extern float PCV_INCREASE_DATA_END;
 
 void oxygen_start(void);
 void do_rap_actions(int type);
+uint16_t get_blower_current_set_speed(void);
 
 ST_PCV_CONTROL_DAT pcv_control_dat;
 
@@ -284,7 +285,8 @@ uint8_t pcv_set_speed(void)
         pcv_control_dat.inc_data_count = pcv_control_dat.max_inc_data_num; // 设置成结束状态
     }
 #else
-    NO_MORE_THAN(set_speed, MAX_BLOWER_SPEED)
+    NO_MORE_THAN(set_speed, MAX_BLOWER_SPEED);
+    NO_LESS_THAN(set_speed, MIN_BLOWER_SPEED);
 #endif
     set_blower_speed(set_speed);
 
@@ -307,6 +309,7 @@ void adjust_blower_speed_for_pcv()
 
     // 这里可以考虑使用之前的PID数据
     // TBD
+#if 0
     if(!pcv_control_dat.err_blower_speed)
     {
         // 得到偏差
@@ -343,7 +346,7 @@ void adjust_blower_speed_for_pcv()
     {
         //已经调整完成了
     }
-
+#endif
     // reset this flag
     pcv_control_dat.err_blower_speed = 0;
 
@@ -457,7 +460,10 @@ void pcv_start_inhale_pid(void)
  */
 void pcv_start_exhale_pid(void)
 {
-    PID_blower_control_data.Low_speed = pcv_control_dat.low_speed;
+    // 张志新：2019-08-16
+    // 也是从当前转速开始调整，如果调整速度不满意可适当调整 PID（仅调整P参数)的时间间隔和幅度---（或者调整P+I+D三个控制参数）
+    // 这个需要在后面进行确认--等P参数调整好
+    PID_blower_control_data.Low_speed = get_blower_current_set_speed();//pcv_control_dat.low_speed;
     PID_blower_control_data.blower_e_pap_adjust_val = 0;
     Base_set_speed_for_epap();
 }
@@ -524,11 +530,11 @@ void pcv_start_inhale(void)
 }
 
 /**
- * [adjust_pcv_high_speed_for_error description]
- * @method adjust_pcv_high_speed_for_error
+ * [adjust_pcv_high_speed_for_press_over description]
+ * @method adjust_pcv_high_speed_for_press_over
  */
 // 说明涡轮控制数据算得不准，需要修正一下
-void adjust_pcv_high_speed_for_error(void)
+void adjust_pcv_high_speed_for_press_over(void)
 {
     int d_speed;
     // 每次之修正1/4
@@ -543,8 +549,21 @@ void adjust_pcv_high_speed_for_error(void)
 
     // 禁止下一轮自动调整
     pcv_control_dat.err_blower_speed = 1; // error in speed count
+
 }
 
+void adjust_pcv_high_speed_for_press_insufficient(void)
+{
+    int16_t d_p;
+    d_p = main_control_data.ipap - current_counted_press;
+    // 每差1cmH2O，调整300转
+    d_p *= 30;
+    pcv_control_dat.high_speed += d_p;
+    NO_MORE_THAN(pcv_control_dat.high_speed, MAX_BLOWER_SPEED);
+
+    // 禁止下一轮自动调整
+    pcv_control_dat.err_blower_speed = 1; // error in speed count
+}
 
 /**
  * [pcv_increase_press_period description]
@@ -558,13 +577,34 @@ void pcv_increase_press_period(void)
     // 如果压力达到要求 则 返回
     if(is_T_mode_inhale_press_over())
     {
-        // 说明涡轮控制数据算得不准，需要修正一下
-        adjust_pcv_high_speed_for_error();
+        // 说明涡轮控制数据算得不准，需要修正一下，超过了控制压力
+        adjust_pcv_high_speed_for_press_over();
+        // 切换状态
+        set_patient_status(EM_PATIENT_BREATH_HOLD);
+
+        // 关闭雾化
+        breath_force_operation_nebulizer(EM_OFF);
+
+        // 启动叩击
+        reset_rap_actions();
+
+        // 启动PID
+        pcv_start_inhale_pid();  // 会自动调整涡轮风机
+
+        // 本呼吸周期 不再进入这个函数，也不需要后面的算法
+        return;
     }
 
     // 压力上升阶段，禁止叩击及其它有干扰的操作，安心控制涡轮风机，并判断是否结束。
     if(pcv_set_speed())
     {
+        // 这里计算偏差
+        if(is_T_mode_inhale_press_insufficient())
+        {
+            // 控制压力不足
+            // 需要调整
+            adjust_pcv_high_speed_for_press_insufficient();
+        }
         // 切换状态
         set_patient_status(EM_PATIENT_BREATH_HOLD);
 
@@ -615,7 +655,7 @@ uint8_t pcv_check_inhale_finished(void)
  */
 uint8_t pcv_detect_inhale_trigger(void)
 {
-    if(is_pcv_exhale_start_trigger(courent_counted_flow))
+    if(is_pcv_exhale_start_trigger(current_counted_flow))
     {
         // PCV应该打开触发通道
         start_trigger(EM_TRIGGER_TYPE_E_INS);
@@ -626,7 +666,8 @@ uint8_t pcv_detect_inhale_trigger(void)
         set_patient_status(EM_PATIENT_T_INHALE_DETECT);
 
         // 呼气结束了，计算呼气潮气量，忽略之后的潮气量计算（主动放弃不必要的数据计算）
-        breath_count_Te();
+        //breath_count_Te();
+        breath_completed_Vte_count();
 
         // 告诉系统，现在开始计算PEEP
         set_peep_start_flag();
@@ -701,7 +742,7 @@ uint8_t is_pcv_next_breath_time(void)
 uint8_t is_pcv_exhale_finished(void)
 {
     // 这个有待进一步优化
-    if(courent_counted_flow > -2000) return EM_TRUE;
+    if(current_counted_flow > -2000) return EM_TRUE;
     return EM_FALSE;
 }
 
@@ -799,7 +840,8 @@ void breath_pcv_mode(void)
         if(is_pcv_exhale_finished())
         {
             // 呼气结束了，计算呼气潮气量，忽略之后的潮气量计算（主动放弃不必要的数据计算）
-            breath_count_Te();
+            //breath_count_Te();            
+        	breath_completed_Vte_count();
         }
 
         // 如果时间到，进入吸气相

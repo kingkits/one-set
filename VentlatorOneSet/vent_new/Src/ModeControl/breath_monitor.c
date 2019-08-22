@@ -325,7 +325,7 @@ __weak void breath_monitor_CPAP(void)
             breath_reset_inhale_trigger_flag();
             time_t = ms_1_count;
         }
-//#else
+        //#else
         switch(check_breath_exhale_period())
         {
         case EM_BREATH_NOT_FINISHED_SIGNAL:    // 状态未触发

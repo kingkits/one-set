@@ -26,8 +26,8 @@ typedef struct __ST_CPAP_CONTROL_DAT
     //  时间戳
     uint32_t time_stemp; // 暂时没有用，先放这里
 
-	// 调用次数
-	uint16_t entry_cycles;
+    // 调用次数
+    uint16_t entry_cycles;
 } ST_CPAP_CONTROL_DAT;
 extern ST_CPAP_CONTROL_DAT cpap_control_dat;
 

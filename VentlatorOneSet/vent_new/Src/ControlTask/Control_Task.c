@@ -123,7 +123,7 @@ void reset_all_control_data(void)
     init_blower_control_data_for_flow_0();
 #endif
 
-	reset_leak_count_data();
+    reset_leak_count_data();
 }
 
 /**

@@ -364,7 +364,7 @@ void Base_set_speed_for_ipap(void)
     set_PID_blower_control_status(EM_BREATH_PRESS_HOLD_HIGH);
     set_PID_blower_adjust_mode(ENUM_PID_FAST_FOR_PRESS);
 
-
+    // 为平滑控制曲线，这里转速是从当前设置的速度开始调整的
     PID_blower_control_data.High_speed = get_blower_current_set_speed();
     PID_blower_control_data.blower_i_pap_adjust_val = 0;
     // 调整涡轮
@@ -767,7 +767,7 @@ void main_control_fast_for_press(void)
         data_ptr = &PID_blower_control_data.blower_p_support_adjust_val;
 
         /// 计算压力差
-        diff = get_PCV_T_target_press() - get_current_press() - 5;
+        diff = get_PCV_T_target_press() - get_current_press();
         goto DIRECT_PRESS_LABEL;//break;
 #else
         return;
@@ -778,7 +778,7 @@ void main_control_fast_for_press(void)
 
         /// 计算压力差
         // // 目标： main_control_data.T_press
-        diff = main_control_data.T_press - get_current_press() - 5;
+        diff = main_control_data.T_press - get_current_press();
         break;
     case EM_BREATH_STANDBY: // 未启动
         return; // 不调整
@@ -789,7 +789,7 @@ void main_control_fast_for_press(void)
 
         /// 计算压力差
         // // 目标： main_control_data.ipap
-        diff = main_control_data.ipap - get_current_press() - 5;
+        diff = main_control_data.ipap - get_current_press();
         break;
 
     case EM_BREATH_PRESS_HOLD_LOW: // EPAP BiLEVEL
@@ -797,7 +797,7 @@ void main_control_fast_for_press(void)
         data_ptr = &PID_blower_control_data.blower_e_pap_adjust_val;
 
         /// 计算压力差
-        diff = main_control_data.epap - get_current_press() - 5;
+        diff = main_control_data.epap - get_current_press();
         break;
 
     case EM_BREATH_FLOW_SUPPORT: // 用于容量控制CMV/VCV
@@ -809,7 +809,7 @@ void main_control_fast_for_press(void)
         data_ptr = &PID_blower_control_data.blower_p_support_adjust_val;
 
         /// 计算压力差
-        diff = get_ST_T_target_press() - get_current_press() - 5;
+        diff = get_ST_T_target_press() - get_current_press();
         goto DIRECT_PRESS_LABEL;//break;
 #else
         return;
@@ -839,7 +839,7 @@ void main_control_fast_for_press(void)
         data_ptr = &PID_blower_control_data.blower_cflex_adjust_val;
 
         /// 计算压力差
-        diff = main_control_data.c_flex_level - get_current_press() - 5;
+        diff = main_control_data.c_flex_level - get_current_press();
         break;
     }
 
@@ -853,25 +853,25 @@ void main_control_fast_for_press(void)
     {
         //10= 1厘米水=1000转左右的变化
         // 初步50ms调整一次 1秒钟调整20次，寄希望于10次达到目标
-        adj_val += (int32_t)diff >> 1;
+        adj_val += (int32_t)diff;
     }
-    else if(abs_diff < 25) ///如果压力差小于1 cmH2O 进行微调
+    else if(abs_diff < 25) ///如果压力差小于2.5 cmH2O 进行微调
     {
         //10= 1厘米水=1000转左右的变化
         // 初步50ms调整一次 1秒钟调整20次，寄希望于10次达到目标
         adj_val += (int32_t)diff * 3;
     }
-    else if(abs_diff < 65) ///如果压力差小于1 cmH2O 进行微调
+    else if(abs_diff < 65) ///如果压力差小于6.5 cmH2O 进行微调
     {
         //10= 1厘米水=1000转左右的变化
         // 初步50ms调整一次 1秒钟调整20次，寄希望于10次达到目标
-        adj_val += (int32_t)diff * 5;
+        adj_val += (int32_t)diff * 4;
     }
     else ///否则加大调整力度
     {
         //10= 1厘米水=1000转左右的变化
         // 初步50ms调整一次 1秒钟调整20次，寄希望于3次达到目标
-        adj_val += (int32_t)diff * 6;
+        adj_val += (int32_t)diff * 4;
     }
 
     // 保存调整量
@@ -1076,21 +1076,21 @@ void open_peep(void)
 // 未完成，待验证
 void adjust_peep_valve(void)
 {
-	// 如果管路脱落，或面罩摘下，则不调整！！！	
-	
-	// 还有啥时不调整？（叩击时不需要调整）
+    // 如果管路脱落，或面罩摘下，则不调整！！！
 
-	// 得到PEEP阀的流量
+    // 还有啥时不调整？（叩击时不需要调整）
 
-	// 根据泄漏值（和可能的系统设置溢出流量），计算预期的流量
+    // 得到PEEP阀的流量
 
-	// 计算偏差
+    // 根据泄漏值（和可能的系统设置溢出流量），计算预期的流量
 
-	// 根据偏差计算需要调整的量
+    // 计算偏差
 
-	// 只调整1/8
+    // 根据偏差计算需要调整的量
 
-	// ！设置
+    // 只调整1/8
+
+    // ！设置
 }
 
 /**
@@ -1387,7 +1387,7 @@ void Blower_start_epap_control(void)
     //set_overflow_work_mode(EM_OVERFLOW_VALVE_HALF_OPEN);
 
     // 将 PEEP阀设置成需要的状态(EPAP)
-    set_peep_valve_control_val(PID_blower_control_data.Low_peep);
+    //set_peep_valve_control_val(PID_blower_control_data.Low_peep);
     // 计算PID调整数据
     PID_blower_control_data.Low_speed = get_blower_speed_for_press(main_control_data.epap);
 
@@ -1680,4 +1680,46 @@ void Test_stop_press_pid(void)
     set_PID_blower_control_status(EM_BREATH_STANDBY);
 }
 
+void peep_valve_adjust_for_flow(void)
+{
+    float dtemp;
+    float dtemp1;
+    uint16_t peep_c;
+    // 在叩击时不能调整
+    if(is_rap_enable()) return;
+    // standby 不工作
+    if(get_patient_breath_mode() == EM_VENTLATOR_STANDBY_MODE)return;
+    // 咳痰 不工作
+    if(get_patient_breath_mode() == EM_VENTLATOR_COUGH_MODE)return;
+
+    switch(get_patient_status())
+    {
+    case EM_PATIENT_NOT_WORK://standby
+        break;
+    case EM_PATIENT_BREATH_DETECT:
+        break;
+
+    case EM_PATIENT_INHALE_START:
+        break;
+
+    // 机械通气过程
+    case EM_PATIENT_T_INHALE_START:
+        break;
+
+    default:
+        //不能调整
+        return;
+    }
+    dtemp = leak_count_data.average_peep_valve_flow - system_set_peep_valve_flow;
+    dtemp *= 0.01f;// 大概调整1/3
+    // get peep valve conrol
+    dtemp1 = (float)pwm_control_data.pwm_peep_val;
+    dtemp1 += dtemp;
+
+    // set peep valve
+    peep_c = (uint16_t) dtemp1;
+    NO_LESS_THAN(peep_c,  MIN_PEEP_CONTROL_VAL);
+    NO_MORE_THAN(peep_c,  MAX_PEEP_CONTROL_VAL);
+    set_peep_valve_control_val(peep_c);
+}
 /// =======================File: End of base_control.c =============================

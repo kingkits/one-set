@@ -89,7 +89,7 @@ __weak void copy_control_data(ST_MAIN_CONTROL_DATA *src, ST_MAIN_CONTROL_DATA *t
  * [start_cpap_test description]
  * @method start_cpap_test
  */
-__weak void start_cpap_test(void){}
+__weak void start_cpap_test(void) {}
 
 /**
  * [设置UI变更参数请求]
@@ -392,12 +392,12 @@ __weak void to_breath_selftest_mode(void)
 /* ***************STANDBY **************
  */
 #if TEST_LEAK_FLOW
-__weak void do_leak_test_actions(void){};
+__weak void do_leak_test_actions(void) {};
 #endif
 
 #if TEST_PEEP_VAL
 void do_peep_test_actions(void);
-__weak void do_peep_test_actions(void){};
+__weak void do_peep_test_actions(void) {};
 #endif
 
 #if SIMPLE_CLIBRATION_FLOW_ENABLE
