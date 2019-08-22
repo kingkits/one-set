@@ -1,4 +1,5 @@
-<<<<<<< HEAD
+### 目录
+
 [TOC]
 
 2019/8/13:
@@ -111,31 +112,8 @@ void get_cpap_speed_and_peep_valve_control_data(uint16_t press, int32_t flow)
     	EM_BREATH_PRESS_LEVEL_HIGHER, // B6-高  <25cmH2O
     	EM_BREATH_PRESS_LEVEL_HIGHEST // B7-极高 >25cmH2O
     } EM_PRESS_LEVEL_STATUS_TYPES;
-=======
-# 2019/8/13: 
-
-## 1 减小blower在压力偏差大时调整的幅度 
-## 2 增加peep-valve-control-data 和 blower-speed 的计算函数（由新的校准数据导出） 
-----
-# 2019/8/16: 
-
-## 1 recoding the method of PEEP-valve control data & speed control data 
-----
->>>>>>> 09277060316b0f50cfa53e2b258ee5e36810174d
 ```
-void get_cpap_speed_and_peep_valve_control_data(uint16_t press, int32_t flow)
-{ 
-  int32_t speed,peep;  
-  double speed_add; 
-  double speed_tmp; 
-  double peep_tmp; 
-  // 初步设想取5-10cmH2O和10L/min的数据，后面每增加一个厘米水PEEP增加30，speed增加800
 
-  speed_add = (double)press * 53.57 + 3197;
-  speed_tmp = flow * 0.8 + speed_add;
-  speed = (uint16_t) speed_tmp;
-
-<<<<<<< HEAD
 ###### 计算泄漏水平
 
 ```c++
@@ -195,10 +173,7 @@ void set_system_breath_press_level(int16_t press)
  	5. 压力变化不足以判断触发状态，推测口端的压力变化可能更明显些--- 后期考虑做个测试，看看有多大变化
  	6. 由5推测目前的口端压力算法可能不尽完善，有待改进，等后期测试后再看。
 ```
-=======
-  peep_tmp = 0.03 * flow + 1133 - 2 * press;
-  peep = (uint16_t) peep_tmp;
-  ...
-}
+
 ```
->>>>>>> 09277060316b0f50cfa53e2b258ee5e36810174d
+    # 找到并尝试解决Ti/Ttotal的错误 （系统中本来需要结束Vte的计算，但错误的结束了Te(exhale timer-counter）
+```
